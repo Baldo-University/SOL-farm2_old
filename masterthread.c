@@ -1,5 +1,21 @@
 #include <stdio.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include <stdlib.h>
+#include <pthread.h>
+
+/*
+MasterThread legge gli argomenti inviati da linea di comando.
+Controlla le opzioni e che i file passati siano regolari.
+Consideriamo solo una directory aggiuntiva in cui fare una ricerca ricorsiva di file.
+*/
+
+/*TODO
+Creare la lista di file da passare, se necessario con ricerca ric. nella directory di -d
+Gestione di segnali.
+Creazione del threadpool
+
+*/
 
 /*costanti*/
 #define WORKERS 4	//numero di thread worker di default
@@ -10,7 +26,7 @@
 /*macro*/
 //verifica che un return value sia diverso da -1
 #define ec_minusone_passdir(s,m) \
-	if((s)==-1) {perror(m); fprintf(stderr,"Opzione '-d' passata non e' una directory. Viene ignorata.\n");}
+	if((s)==-1) {perror(m);}	
 
 void qualcosa(int argc, char *argv[]) {
 	//settiamo i valori di default. Se necessario verranno sovrascritti in seguito dalle opzioni
@@ -19,7 +35,8 @@ void qualcosa(int argc, char *argv[]) {
 	long delay=DELAY;
 	
 	int opt, nint;	//integer per getopt
-	char *extradir;
+	char *extradir;	//nome directory passata con -d
+	struct stat info;	//struct per info sulla directory
 	//scorre gli argomenti passati
 	while((opt=getopt(argc,argv,"n:q:t:d:"))!=-1) {
 		switch(opt) {	//guarda se l'argomento e' un'opzione, altrimenti verifica che sia un file
@@ -38,11 +55,16 @@ void qualcosa(int argc, char *argv[]) {
 			case 't':	//ritardo di inserimento consecutivo nella coda
 				nint=strtol(optarg,NULL,10);
 				if(nint<0)
-					fprintf(stderr,"L'opzione '-%c' passata non e' valida e viene scartata. Passare un intero non negativo.\n",opt);
+				fprintf(stderr,"L'opzione '-%c' passata non e' valida e viene scartata. Passare un intero non negativo.\n",opt);
 				else delay=nint;
 				break;
 			case 'd':	//directory di ricerca ricorsiva
-				
+				//si ottengono le info sul pathname passato
+				ec_minusone_passdir(stat(optarg,&info),"In getopt, controllo pathname");
+				//verifica che il pathname sia una directory
+				if(!S_ISDIR(info.st_mode))
+					fprintf(stderr,"Il primo argomento deve essere una directory. Opzione scartata.\n");
+				else	extradir=optarg	//se e' directory si segna il nome 
 				break;
 			default:
 				fprintf(stderr,"L'opzione '/%c' passata non e' valida e viene scartata.\n",opt);
