@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <limits.h>
 
 /*
 MasterThread legge gli argomenti inviati da linea di comando.
@@ -30,33 +31,40 @@ Creazione del threadpool
 
 void qualcosa(int argc, char *argv[]) {
 	//settiamo i valori di default. Se necessario verranno sovrascritti in seguito dalle opzioni
-	int workers=WORKERS;
-	int queue_len=QUEUE_LENGTH;
+	long workers=WORKERS;
+	long queue_len=QUEUE_LENGTH;
 	long delay=DELAY;
 	
-	int opt, nint;	//integer per getopt
+	int opt;	//integer per getopt
+	long nlong;	//long per getopt
 	char *extradir;	//nome directory passata con -d
 	struct stat info;	//struct per info sulla directory
 	//scorre gli argomenti passati
 	while((opt=getopt(argc,argv,"n:q:t:d:"))!=-1) {
 		switch(opt) {	//guarda se l'argomento e' un'opzione, altrimenti verifica che sia un file
 			case 'n':	//numero di worker
-				nint=strtol(optarg,NULL,10);
-				if(nint<1)
+				nlong=strtol(optarg,NULL,10);
+				if(nlong<1) {
+					perror("In getopt");
 					fprintf(stderr,"L'opzione '-%c' passata non e' valida e viene scartata. Passare un intero positivo.\n",opt);
-				else workers=(int)nint;
+				}
+				else workers=nlong;
 				break;
 			case 'q':	//lunghezza della coda
-				nint=strtol(optarg,NULL,10);
-				if(nint<1)
+				nlong=strtol(optarg,NULL,10);
+				if(nlong<1){
+					perror("In getopt");
 					fprintf(stderr,"L'opzione '-%c' passata non e' valida e viene scartata. Passare un intero positivo.\n",opt);
-				else queue_len=(int)nint;
+				}
+				else queue_len=nlong;
 				break;
 			case 't':	//ritardo di inserimento consecutivo nella coda
-				nint=strtol(optarg,NULL,10);
-				if(nint<0)
-				fprintf(stderr,"L'opzione '-%c' passata non e' valida e viene scartata. Passare un intero non negativo.\n",opt);
-				else delay=nint;
+				nlong=strtol(optarg,NULL,10);
+				if(nlong<0) {
+					perror("In getopt");
+					fprintf(stderr,"L'opzione '-%c' passata non e' valida e viene scartata. Passare un intero non negativo.\n",opt);
+				}
+				else delay=nlong;
 				break;
 			case 'd':	//directory di ricerca ricorsiva
 				//si ottengono le info sul pathname passato
