@@ -42,7 +42,7 @@ void qualcosa(int argc, char *argv[]) {
 				else delay=nint;
 				break;
 			case 'd':	//directory di ricerca ricorsiva
-				//prova
+				
 				break;
 			default:
 				fprintf(stderr,"L'opzione '/%c' passata non e' valida e viene scartata.\n",opt);
