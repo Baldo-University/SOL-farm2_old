@@ -10,14 +10,13 @@
 /*
 MasterThread legge gli argomenti inviati da linea di comando.
 Controlla le opzioni e che i file passati siano regolari.
-Consideriamo solo una directory aggiuntiva in cui fare una ricerca ricorsiva di file.
 */
 
 /*TODO
-Creare la lista di file da passare, se necessario con ricerca ric. nella directory di -d
+Creare la lista di file da passare, con eventuale ricerca ric. nella directory di -d
 Gestione di segnali.
-Creazione del threadpool
 Funzione atexit()
+funzione di ricerca file in maniera ricorsiva nelle directory passate con -d
 */
 
 /*costanti*/
@@ -29,11 +28,10 @@ Funzione atexit()
 /*macro*/
 #define ec_null(s,m) \
 	if((s)==NULL) {perror(m); exit(EXIT_FAILURE);}
-//verifica che un return value sia diverso da -1
 #define ec_minusone(s,m) \
 	if((s)==-1) {perror(m); exit(EXIT_FAILURE);}
 	
-//lista di filepath
+//lista di filepath. Valida sia per i filename di file binari sia per i pathanme di directory
 //TODO mettere in .h condiviso
 typedef struct node {
 	char name[NAME_LENGTH+1];
@@ -57,7 +55,7 @@ void qualcosa(int argc, char *argv[]) {
 	
 	int opt;	//integer per getopt
 	long nlong;	//long per getopt
-	char *extradir=NULL;	//nome directory passata con -d
+	node_list directories=NULL;	//lista di directory passate con -d
 	struct stat dir_info;	//struct per info su filename passato (directory o file regular)
 	//scorre gli argomenti passati
 	while((opt=getopt(argc,argv,"n:q:t:d:"))!=-1) {
@@ -91,8 +89,10 @@ void qualcosa(int argc, char *argv[]) {
 				ec_minusone(stat(optarg,&dir_info),"In getopt, controllo pathname");
 				//verifica che il pathname sia una directory
 				if(!S_ISDIR(dir_info.st_mode))
-					fprintf(stderr,"Il primo argomento deve essere una directory. Opzione scartata.\n");
-				else	extradir=optarg	//se e' directory si segna il nome 
+					fprintf(stderr,"L'argomento deve essere una directory. Opzione scartata.\n");
+				else	{	//aggiunge la directory alla lista di directory da esplorare
+					
+				}
 				break;
 			default:
 				fprintf(stderr,"L'opzione '/%c' passata non e' valida e viene scartata.\n",opt);
@@ -100,7 +100,7 @@ void qualcosa(int argc, char *argv[]) {
 		}
 	}
 		
-	node_list files=NULL;	//lista di filename
+	node_list files=NULL;	//lista di filename da mettere sulla coda
 	struct stat file_info;	//info sul file considerato
 	//ricerca nomi file passati. Si inizia scorrendo argv[]
 	int i;
@@ -110,9 +110,9 @@ void qualcosa(int argc, char *argv[]) {
 			i++;	//se e' un'opzione se ne salta l'argomento
 		else {	//controlla sia un file regolare
 			ec_minusone(stat(argv[i],"Nella lista di file"));
-			if(!S_ISREG(file_info.st_mode)){
+			if(!S_ISREG(file_info.st_mode))
 				fprintf(stderr,"Passato file non adatto.\n");
-			}
+			else
 		}
 	}
 }
