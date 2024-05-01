@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <pthread.h>
 #include <limits.h>
+#include <string.h>
 
 /*
 MasterThread legge gli argomenti inviati da linea di comando.
@@ -15,19 +17,37 @@ Consideriamo solo una directory aggiuntiva in cui fare una ricerca ricorsiva di 
 Creare la lista di file da passare, se necessario con ricerca ric. nella directory di -d
 Gestione di segnali.
 Creazione del threadpool
-
+Funzione atexit()
 */
 
 /*costanti*/
 #define WORKERS 4	//numero di thread worker di default
 #define QUEUE_LENGTH 8	//lunghezza della coda concorrente tra master e worker
 #define DELAY 0	//ritardo nell'inserimento di task nella coda
-#define NAMELENGTH 255	//lunghezza massima dei filename
+#define NAME_LENGTH 255	//lunghezza massima dei filename
 
 /*macro*/
+#define ec_null(s,m) \
+	if((s)==NULL) {perror(m); exit(EXIT_FAILURE);}
 //verifica che un return value sia diverso da -1
-#define ec_minusone_passdir(s,m) \
-	if((s)==-1) {perror(m);}	
+#define ec_minusone(s,m) \
+	if((s)==-1) {perror(m); exit(EXIT_FAILURE);}
+	
+//lista di filepath
+//TODO mettere in .h condiviso
+typedef struct node {
+	char name[NAME_LENGTH+1];
+	struct node* next;
+} node;
+typedef struct node* node_list;
+
+//aggiunta di un filename in testa alla lista di filename
+void l_add(node_list *head, char *dirname) {
+	node_list new;
+	ec_null((new=malloc(sizeof(node)))==NULL,"In malloc di aggiunta a lista");
+	new->next=*head;
+	*head=new;
+}
 
 void qualcosa(int argc, char *argv[]) {
 	//settiamo i valori di default. Se necessario verranno sovrascritti in seguito dalle opzioni
@@ -37,8 +57,8 @@ void qualcosa(int argc, char *argv[]) {
 	
 	int opt;	//integer per getopt
 	long nlong;	//long per getopt
-	char *extradir;	//nome directory passata con -d
-	struct stat info;	//struct per info sulla directory
+	char *extradir=NULL;	//nome directory passata con -d
+	struct stat dir_info;	//struct per info su filename passato (directory o file regular)
 	//scorre gli argomenti passati
 	while((opt=getopt(argc,argv,"n:q:t:d:"))!=-1) {
 		switch(opt) {	//guarda se l'argomento e' un'opzione, altrimenti verifica che sia un file
@@ -68,15 +88,31 @@ void qualcosa(int argc, char *argv[]) {
 				break;
 			case 'd':	//directory di ricerca ricorsiva
 				//si ottengono le info sul pathname passato
-				ec_minusone_passdir(stat(optarg,&info),"In getopt, controllo pathname");
+				ec_minusone(stat(optarg,&dir_info),"In getopt, controllo pathname");
 				//verifica che il pathname sia una directory
-				if(!S_ISDIR(info.st_mode))
+				if(!S_ISDIR(dir_info.st_mode))
 					fprintf(stderr,"Il primo argomento deve essere una directory. Opzione scartata.\n");
 				else	extradir=optarg	//se e' directory si segna il nome 
 				break;
 			default:
 				fprintf(stderr,"L'opzione '/%c' passata non e' valida e viene scartata.\n",opt);
 				break;
+		}
+	}
+		
+	node_list files=NULL;	//lista di filename
+	struct stat file_info;	//info sul file considerato
+	//ricerca nomi file passati. Si inizia scorrendo argv[]
+	int i;
+	for(i=1;i<argc;i++) {
+		//prima controlla di non stare considerando un'opzione
+		if(!strncmp(argv[i],"-n",3) || !strncmp(argv[i],"-q",3 || !strncmp(argv[i],"-t",3 || !strncmp(argv[i],"-d",3)
+			i++;	//se e' un'opzione se ne salta l'argomento
+		else {	//controlla sia un file regolare
+			ec_minusone(stat(argv[i],"Nella lista di file"));
+			if(!S_ISREG(file_info.st_mode)){
+				fprintf(stderr,"Passato file non adatto.\n");
+			}
 		}
 	}
 }
