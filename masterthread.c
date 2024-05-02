@@ -104,7 +104,7 @@ void qualcosa(int argc, char *argv[]) {
 				if(!S_ISDIR(dir_info.st_mode))
 					fprintf(stderr,"L'argomento deve essere una directory. Opzione scartata.\n");
 				else		//aggiunge la directory alla lista di directory da esplorare
-					l_add(directories,optarg);	//passa lista e nome directory
+					l_add(&directories,optarg);	//passa lista e nome directory
 				break;
 				
 			default:
@@ -127,7 +127,8 @@ void qualcosa(int argc, char *argv[]) {
 			ec_minusone(stat(argv[i],"Nella lista di file"));
 			if(!S_ISREG(file_info.st_mode))
 				fprintf(stderr,"Passato file non adatto.\n");
-			else
+			else	//aggiungi il file alla lista di filename
+				l_add(&files,argv[i]);
 		}
 	}
 }
