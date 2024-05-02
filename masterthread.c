@@ -51,7 +51,7 @@ void l_add(node_list *head, char *name) {
 }
 
 //ricerca ricorsiva nella directory passata di filename e directory da mettere sulla coda di produzione
-void dir_produce_r() {
+void dir_produce_r(node_list *dir_head, node_list *dir_aux, node_list *file_head, node_list *file_aux) {
 	
 }
 
