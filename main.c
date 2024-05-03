@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define SOCKETNAME "farm2.sck"
+
 
 /*
 Main del progetto farm2, a.a. 23/24. Autore: Baldini Enrico
@@ -26,7 +28,7 @@ int main(int argc, char *argv[]) {
 			perror("Fork non riuscita");
 			break;
 		case 0:	//figlio
-		//passare la figlio il nome del socket
+			//passare la figlio il nome del socket
 			break;
 		default:	//padre
 			
