@@ -38,7 +38,7 @@ WorkerFunction
 -Si scollega dal socket
 
 Collector
--Crea una struttura dati (hash table?) su cui salvare via via i risultati ottenuti
+-Crea una lista su cui salvare via via i risultati ottenuti in maniera ordinata
 -Mette a disposizione una socket di ascolto
 -Utilizza select() per capire quando un socket ha qualcosa da comunicare
 -Mette su un thread che dorme per un secondo e al termine di quel secondo chiede la stampa ordinata dei risultati parziali
