@@ -6,7 +6,7 @@ Main
 
 MasterWorker
 -getopt, salvandosi le opzioni in apposite variabili e le directory in una lista di filepath DirList
--Scorre gli argomenti restanti usando optind come indice, controlla se gli argomenti passati da linea di comando sono file  e se lo sono ne inserisce i filepath in una lista di filepath FileList
+-Scorre gli argomenti restanti usando optind come indice, controlla se gli argomenti passati da linea di comando sono file e se lo sono ne inserisce i filepath in una lista di filepath FileList
 -Scorre DirList. Per ogni elem di lista:
 	-Si assicura di lavorare su una directory
 	-Apre la directory
