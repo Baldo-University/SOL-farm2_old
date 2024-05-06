@@ -4,16 +4,10 @@
 #include <sys/types.h>
 
 #define SOCKETNAME "farm2.sck"
-#define ec_minusone(s,m) \
-	if((s)!=NULL && (s)==-1) {perror(m); exit(EXIT_FAILURE)}
 
 /*
 Main del progetto farm2, a.a. 2023/24. Autore: Baldini Enrico
 Riceve gli argomenti mandati da linea di comando.
-*/
-
-/*TODO
-Fork
 */
 
 int main(int argc, char *argv[]) {
@@ -22,7 +16,6 @@ int main(int argc, char *argv[]) {
 		fprintf(stderr,"Usare il seguente formato:\n./farm [-n] <int> [-q] <int> [-d] <dir> [-t] <int> file1 [file2,...]\n");	//mettere come define?
 		exit(EXIT_FAILURE);
 	}
-	//TODO fork ed exec di masterworker e collector
 	switch(fork()) {
 		case -1:	//fork non riuscita
 			perror("Main, fork non riuscita");
@@ -33,7 +26,7 @@ int main(int argc, char *argv[]) {
 			perror("Main, in exec");
 			exit(EXIT_FAILURE);
 		default:	//padre
-			
+			master_worker(argc,argv);	//chiamata alla funzione di MasterWorker, 
 			break;
 	}
 	return 0;

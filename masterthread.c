@@ -23,7 +23,7 @@ funzione di ricerca file in maniera ricorsiva nelle directory passate con -d
 #define WORKERS 4	//numero di thread worker di default
 #define QUEUE_LENGTH 8	//lunghezza della coda concorrente tra master e worker
 #define DELAY 0	//ritardo nell'inserimento di task nella coda
-#define NAME_LENGTH 255	//lunghezza massima dei filename
+#define NAME_LENGTH 256	//lunghezza massima dei filename +1
 
 /*macro*/
 #define ec_null(s,m) \
@@ -44,7 +44,7 @@ typedef struct node* node_list;
 //aggiunta di un filename in testa alla lista di filename (vale per file e per directory)
 void l_add(node_list *head, char *name) {
 	node_list new;
-	ec_null((new=malloc(sizeof(node)))==NULL,"In malloc di aggiunta a lista");
+	ec_null((new=malloc(sizeof(node)))==NULL,"MasterWorker: in malloc di nodo da aggiungere a lista");
 	strncpy(new->name,name,NAME_LENGTH+1);
 	new->next=*head;
 	*head=new;
@@ -55,7 +55,7 @@ void dir_produce_r(node_list *dir_head, node_list *dir_aux, node_list *file_head
 	
 }
 
-void qualcosa(int argc, char *argv[]) {
+void master_worker(int argc, char *argv[]) {
 	//settiamo i valori di default. Se necessario verranno sovrascritti in seguito dalle opzioni
 	long workers=WORKERS;
 	long queue_len=QUEUE_LENGTH;
