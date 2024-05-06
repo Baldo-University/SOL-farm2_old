@@ -53,7 +53,7 @@ void l_clear(node_list *head) {
 /*Aggiunge un risultato alla lista in maniera ordinata*/
 void l_ordered_add(node_list *head, long res, char *name) {
 	node_list new;	//nuovo elemento di lista
-	ec_null((new=malloc(sizeof(node)))==NULL,"Collector: in malloc di nodo da aggiungere a lista");
+	ec_null((new=malloc(sizeof(node)))==NULL,"Collector, in malloc di nodo da aggiungere a lista");
 	new->result=res;	//inizializzazione delle componenti del nodo
 	strncpy(new->name,name,NAME_LENGTH+1);
 	//controlla se l'elemento aggiunto deve andare in testa
@@ -84,7 +84,7 @@ Fa da server per i thread del processo MasterWorker
 int main(int argc, char *argv[]) {
 	//controlla di aver ricevuto esattamente un argomento (controllo superfluo?)
 	if(argc!=2) {
-		fprintf(stderr,"Errore fatale: argomenti mal posti in Collector.");
+		fprintf(stderr,"Errore fatale, argomenti mal posti in Collector.");
 		exit(EXIT_FAILURE);
 	}
 	node_list results=NULL;	//crea la lista di 

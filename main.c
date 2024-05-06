@@ -1,19 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
 
 #define SOCKETNAME "farm2.sck"
-
+#define ec_minusone(s,m) \
+	if((s)!=NULL && (s)==-1) {perror(m); exit(EXIT_FAILURE)}
 
 /*
-Main del progetto farm2, a.a. 23/24. Autore: Baldini Enrico
+Main del progetto farm2, a.a. 2023/24. Autore: Baldini Enrico
 Riceve gli argomenti mandati da linea di comando.
 */
 
 /*TODO
 Fork
-
 */
-
 
 int main(int argc, char *argv[]) {
 	
@@ -22,16 +23,18 @@ int main(int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 	//TODO fork ed exec di masterworker e collector
-	pid_t pid;
-	switch(pid=fork()) {
-		case -1:	//errore padre
-			perror("Fork non riuscita");
+	switch(fork()) {
+		case -1:	//fork non riuscita
+			perror("Main, fork non riuscita");
+			exit(EXIT_FAILURE);
 			break;
-		case 0:	//figlio
-			//passare la figlio il nome del socket
-			break;
+		case 0:	//figlio. Nota: il nome del programma chiamato con exec e' collector
+			execl("./collector","collector",SOCKETNAME,(*char)NULL);
+			perror("Main, in exec");
+			exit(EXIT_FAILURE);
 		default:	//padre
 			
 			break;
 	}
+	return 0;
 }
