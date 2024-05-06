@@ -41,7 +41,7 @@ typedef struct node {
 } node;
 typedef struct node* node_list;
 
-//aggiunta di un filename in testa alla lista di filename (vale per file e per directory)
+/*aggiunta di un filename in testa alla lista di filename (vale per file e per directory)*/
 void l_add(node_list *head, char *name) {
 	node_list new;
 	ec_null((new=malloc(sizeof(node)))==NULL,"MasterWorker: in malloc di nodo da aggiungere a lista");
@@ -50,8 +50,13 @@ void l_add(node_list *head, char *name) {
 	*head=new;
 }
 
-//ricerca ricorsiva nella directory passata di filename e directory da mettere sulla coda di produzione
-void dir_produce_r(node_list *dir_head, node_list *dir_aux, node_list *file_head, node_list *file_aux) {
+/*ricerca ricorsiva nella directory passata di filename e directory da mettere nella lista di filename*/
+void dir_find_r(node_list *dir_head, node_list *dir_aux, node_list *file_head, node_list *file_aux) {
+	
+}
+
+/*Mette in fondo alla coda un filename*/
+int enqueue() {
 	
 }
 
@@ -113,22 +118,25 @@ void master_worker(int argc, char *argv[]) {
 		}
 	}
 	
+	//creazione della coda di task
+	
+	//creazione del threadpool
+	
 	//si salvano i filename su di una lista che sara' passata alla coda di produzione	
 	node_list files=NULL;	//lista di filename
 	node_list file_aux=files;		//puntatore ausiliario
 	struct stat file_info;	//info sul file considerato
 	//ricerca nomi file passati. Si inizia scorrendo argv[]
 	int i;
-	for(i=1;i<argc;i++) {
-		//prima controlla di non stare considerando un'opzione
-		if(!strncmp(argv[i],"-n",3) || !strncmp(argv[i],"-q",3 || !strncmp(argv[i],"-t",3 || !strncmp(argv[i],"-d",3)
-			i++;	//se e' un'opzione se ne salta l'argomento
-		else {	//controlla sia un file regolare
-			ec_minusone(stat(argv[i],"Nella lista di file"));
-			if(!S_ISREG(file_info.st_mode))
-				fprintf(stderr,"Passato file non adatto.\n");
-			else	//aggiungi il file alla lista di filename
-				l_add(&files,argv[i]);
-		}
+	for(i=optind;i<argc;i++) {	//optarg ha messo le opzioni come primi argomenti, resta solo la lista di file
+		ec_minusone(stat(argv[i],"Nella lista di file"));	//ottieni info sul file
+		if(!S_ISREG(file_info.st_mode))	//se l'argomento passato non e' un file si ignora
+			fprintf(stderr,"Passato file non adatto.\n");
+		else l_add(&files,argv[i]);	//altrimenti aggiungi il file alla lista di filename
 	}
+	
+	//ricerca all'interno della lista di directory
+	dir_find_r(&directories,&dir_aux,&files,&file_aux);
+	
+	//ciclo di inserimento task nella coda	
 }

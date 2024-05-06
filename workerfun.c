@@ -22,6 +22,7 @@ o della propria terminazione
 */
 
 long worker_sum(char *filename) {
+	//TODO fread invece di fgets
 	/*calcolo dati nei file*/
 	long sum=0;	//somma totale
 	long i=0;	//contatore di riga per il calcolo

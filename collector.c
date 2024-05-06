@@ -3,7 +3,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
-#include <sys/select.h> 
+#include <sys/select.h>
+#include <pthread.h>
 
 #define UNIX_MAX_PATH 108
 #define N 256	//lunghezza massima di un filepath +1
@@ -29,53 +30,10 @@ typedef struct node {
 } node;
 typedef struct node* node_list;
 
-/*Stampa la lista*/
-void l_print(node_list *head) {
-	node_list aux=head;	//puntatore ausiliario
-	while(aux!=NULL) {
-		fprintf(stdout,"%ld\t%s\n",aux->result,aux->name);
-		aux=aux->next;
-	}
-	fflush(stdout);
-}
-
-/*Libera la memoria allocata alla lista*/
-void l_clear(node_list *head) {
-	node_list aux=head;
-	while(head!=NULL) {
-		if(head->next!=NULL)
-			head=head->next;
-		free(aux);
-		aux=*head;
-	}
-}
-
-/*Aggiunge un risultato alla lista in maniera ordinata*/
-void l_ordered_add(node_list *head, long res, char *name) {
-	node_list new;	//nuovo elemento di lista
-	ec_null((new=malloc(sizeof(node)))==NULL,"Collector, in malloc di nodo da aggiungere a lista");
-	new->result=res;	//inizializzazione delle componenti del nodo
-	strncpy(new->name,name,NAME_LENGTH+1);
-	//controlla se l'elemento aggiunto deve andare in testa
-	if(head==NULL && head->result>=new->result) {
-		new->next=*head;
-		*head=new;
-	}
-	else {	//inserimento all'interno della lista
-		node_list aux=head;	//puntatore ausiliario
-		while(aux->next!=NULL) {
-			//l'elemento a cui punta aux ha valore maggiore dell'el. da inserire
-			if(aux->next->result>=new->result) {	//inserimento tra due nodi
-				new->next=aux->next;
-				aux->next=*new;
-				return;
-			}
-			else *aux=aux->next;	//scorrimento di coda
-		}
-		//ha scorso la lista e non ha trovato elementi maggiori di quello da includere
-		aux->next=*new;
-	}
-}
+void l_ordered_add(node_list*,long,char*);	//Aggiunge un risultato alla lista in maniera ordinata
+void thread_print(void);	//funzione del thread che stampa i risultati ottenuti con intervallo indicativo di 1 secondo
+void l_print(node_list*);	//Stampa la lista
+void l_clear(node_list*);	//Libera la memoria allocata alla lista
 
 /*
 Secondo processo del programma, riceve come argomento il nome della socket.
@@ -106,5 +64,50 @@ int main(int argc, char *argv[]) {
 	while(running) {
 		rdset=set;
 		
+	}
+}
+
+void l_ordered_add(node_list *head, long res, char *name) {
+	node_list new;	//nuovo elemento di lista
+	ec_null((new=malloc(sizeof(node)))==NULL,"Collector, in malloc di nodo da aggiungere a lista");
+	new->result=res;	//inizializzazione delle componenti del nodo
+	strncpy(new->name,name,NAME_LENGTH+1);
+	//controlla se l'elemento aggiunto deve andare in testa
+	if(head==NULL && head->result>=new->result) {
+		new->next=*head;
+		*head=new;
+	}
+	else {	//inserimento all'interno della lista
+		node_list aux=head;	//puntatore ausiliario
+		while(aux->next!=NULL) {
+			//l'elemento a cui punta aux ha valore maggiore dell'el. da inserire
+			if(aux->next->result>=new->result) {	//inserimento tra due nodi
+				new->next=aux->next;
+				aux->next=*new;
+				return;
+			}
+			else *aux=aux->next;	//scorrimento di coda
+		}
+		//ha scorso la lista e non ha trovato elementi maggiori di quello da includere
+		aux->next=*new;
+	}
+}
+
+void l_print(node_list *head) {
+	node_list aux=head;	//puntatore ausiliario
+	while(aux!=NULL) {
+		fprintf(stdout,"%ld\t%s\n",aux->result,aux->name);
+		aux=aux->next;
+	}
+	fflush(stdout);
+}
+
+void l_clear(node_list *head) {
+	node_list aux=head;
+	while(head!=NULL) {
+		if(head->next!=NULL)
+			head=head->next;
+		free(aux);
+		aux=*head;
 	}
 }
