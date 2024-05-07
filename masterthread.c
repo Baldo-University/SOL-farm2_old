@@ -14,10 +14,8 @@ Controlla le opzioni e che i file passati siano regolari.
 */
 
 /*TODO
-Creare la lista di file da passare, con eventuale ricerca ric. nella directory di -d
 Gestione di segnali.
 Funzione atexit()
-funzione di ricerca file in maniera ricorsiva nelle directory passate con -d
 */
 
 /*costanti*/
@@ -33,64 +31,17 @@ funzione di ricerca file in maniera ricorsiva nelle directory passate con -d
 	if((s)==-1) {perror(m); exit(EXIT_FAILURE);}
 #define ec_negative(s,m) \
 	if((s)<0) {perror(m); exit(EXIT_FAILURE);}
-	
-//lista di filepath. Valida sia per i filename di file binari sia per i pathanme di directory
-//TODO mettere in .h condiviso
-typedef struct node {
-	char name[NAME_LENGTH+1];
+
+/*Elementi di una lista di filepath*/
+typedef struct {
+	char name[NAME_LENGTH];
 	struct node* next;
 } node;
 typedef struct node* node_list;
 
-/*aggiunta di un filename alla lista di filename (vale per file e per directory)*/
-void l_add(node_list *head, char *name, int mode) {	//mode indica se inserire in cima o in coda
-	node_list new;
-	ec_null((new=malloc(sizeof(node)))==NULL,"MasterWorker: in malloc di nodo da aggiungere a lista");
-	strncpy(new->name,name,NAME_LENGTH+1);
-	switch(mode) {
-		case 0:	//aggiunta in testa
-			new->next=*head;
-			*head=new;
-			break;
-		case 1:	//aggiunta in coda
-			node_list aux=*head;
-			while(aux->next!=NULL)
-				aux=aux->head;
-			aux->next=*new;
-			break;
-	}
-}
-
-/*ricerca ricorsiva nella directory passata di filename e directory da mettere nella lista di filename*/
-void dir_search(node_list *dir_head, node_list *dir_aux, node_list *file_head, node_list *file_aux) {
-	DIR *dir=opendir(dir_head->name);
-	ec_null(dir,"MasterWorker, dir_search, s.c. in apertura");
-	struct dirent *file;	//struttura dati per file all'interno della directory che stiamo scorrendo
-	while((errno=0, file=readdir)!=NULL) {	
-		if(errno!=0) {	//controllo errore
-			fprintf(stderr,"%s\t",dir_head->name);
-			exit(EXIT_FAILURE);
-		}
-		if() {	//controlla se e' un file normale
-			
-		}
-		else if() {	//controlla se e' una directory diversa da "./"
-			
-		}
-		else if(file->d_type==DT_UNKNOWN) {
-			
-		}
-	}
-	if(errno!=0) {	//controllo errore
-		fprintf(stderr,"%s\t",dir_head->name);
-		exit(EXIT_FAILURE);
-	}
-}
-
-/*Mette in fondo alla coda un filename*/
-int enqueue() {
-	
-}
+void l_add(node_list*,char*,int);
+void dir_search(node_list*,node_list*,node_list*,node_list*);
+int enqueue();
 
 void master_worker(int argc, char *argv[]) {
 	//settiamo i valori di default. Se necessario verranno sovrascritti in seguito dalle opzioni
@@ -149,8 +100,14 @@ void master_worker(int argc, char *argv[]) {
 		}
 	}
 	
-	//creazione della coda di task
-	
+	//creazione della coda di task, un array di stringhe usato come buffer a cerchio
+	char **queue;
+	ec_null(queue=malloc(queue_len*sizeof(char*)),"Masterworker, s.c. creazione coda");
+	int i;	//indice
+	for(i=0;i<queue_len;i++) {	//inizializzazione degli elementi della coda
+		ec_null(queue[i]=malloc((NAME_LENGTH)*sizeof(char)),"MasterWorker, s.c. creazione elemento di coda");
+	}
+	int front=-1, back=-1;	//indici, rispettivamente, di testa e fine di coda
 	//creazione del threadpool
 	
 	//si salvano i filename su di una lista che sara' passata alla coda di produzione	
@@ -168,11 +125,68 @@ void master_worker(int argc, char *argv[]) {
 	
 	//ricerca all'interno della lista di directory
 	while(directories!=NULL) {
-		dir_search(&directories,&dir_aux,&files,&file_aux);
-		*directories=directories->next;
-		free(dir_aux);
+		dir_search(&directories,&dir_aux,&files,&file_aux);	//ricerca breadth-first
+		*directories=directories->next;	//scorre la lista
+		free(dir_aux);	//libera la memoria
 		dir_aux=*directories;
 	}
 	
 	//ciclo di inserimento task nella coda	
+}
+
+/*aggiunta di un filename alla lista di filename (vale per file e per directory)*/
+void l_add(node_list *head, char *name, int mode) {	//mode indica se inserire in cima o in coda
+	node_list new;
+	ec_null((new=malloc(sizeof(node)))==NULL,"MasterWorker: in malloc di nodo da aggiungere a lista");
+	strncpy(new->name,name,NAME_LENGTH+1);
+	switch(mode) {
+		case 0:	//aggiunta in testa
+			new->next=*head;
+			*head=new;
+			break;
+		case 1:	//aggiunta in coda
+			node_list aux=*head;
+			while(aux->next!=NULL)
+				aux=aux->head;
+			aux->next=*new;
+			aux=*head;	//per consistenza rimettiamo il puntatore ausiliario in testa alla lista
+			break;
+	}
+}
+
+/*ricerca ricorsiva nella directory passata di filename e directory da mettere nella lista di filename*/
+void dir_search(node_list *dir_head, node_list *dir_aux, node_list *file_head, node_list *file_aux) {
+	DIR *dir=opendir(dir_head->name);
+	ec_null(dir,"MasterWorker, dir_search, s.c. in apertura");
+	struct dirent *file;	//struttura dati per file all'interno della directory che stiamo scorrendo
+	while((errno=0, file=readdir)!=NULL) {	
+		if(errno!=0) {	//controllo errore
+			fprintf(stderr,"%s\t",dir_head->name);
+			exit(EXIT_FAILURE);
+		}
+		if(file->d_type==DT_REG) {	//controlla se e' un file normale
+			char fullname[NAME_LENGTH];
+			snprintf(fullname,NAME_LENGTH,"%s%s",dir_head->name,file->d_name);
+			l_add(&file_head,fullname,0);	//inserimento in testa del file
+		}
+		else if(file->d_type==DT_DIR && dile->d_name[0]!='.') {	//controlla se e' una directory diversa da "./"
+			char fullname[NAME_LENGTH];
+			snprintf(fullname,NAME_LENGTH,"%s%s",dir_head->name,file->d_name);	//salva il filepath completo della directory
+			l_add(&dir_head,fullname,1);	//inserisci la directory trovata in fondo alla lista di directory
+		}
+		else if(file->d_type==DT_UNKNOWN) {	//gestione tipo sconosciuto
+			perror("MasterWorker, dir_search, tipo file sconosciuto");
+			//exit(EXIT_FAILURE);
+		}
+	}
+	if(errno!=0) {	//controllo errore
+		fprintf(stderr,"%s\t",dir_head->name);
+		exit(EXIT_FAILURE);
+	}
+}
+
+/*Mette in fondo alla coda un filename*/
+//TODO mettere in .h condiviso
+int enqueue() {
+	
 }
