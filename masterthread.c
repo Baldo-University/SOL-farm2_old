@@ -1,11 +1,12 @@
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <pthread.h>
+#include <dirent.h>
 #include <limits.h>
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 /*
 MasterThread legge gli argomenti inviati da linea di comando.
@@ -41,18 +42,49 @@ typedef struct node {
 } node;
 typedef struct node* node_list;
 
-/*aggiunta di un filename in testa alla lista di filename (vale per file e per directory)*/
-void l_add(node_list *head, char *name) {
+/*aggiunta di un filename alla lista di filename (vale per file e per directory)*/
+void l_add(node_list *head, char *name, int mode) {	//mode indica se inserire in cima o in coda
 	node_list new;
 	ec_null((new=malloc(sizeof(node)))==NULL,"MasterWorker: in malloc di nodo da aggiungere a lista");
 	strncpy(new->name,name,NAME_LENGTH+1);
-	new->next=*head;
-	*head=new;
+	switch(mode) {
+		case 0:	//aggiunta in testa
+			new->next=*head;
+			*head=new;
+			break;
+		case 1:	//aggiunta in coda
+			node_list aux=*head;
+			while(aux->next!=NULL)
+				aux=aux->head;
+			aux->next=*new;
+			break;
+	}
 }
 
 /*ricerca ricorsiva nella directory passata di filename e directory da mettere nella lista di filename*/
-void dir_find_r(node_list *dir_head, node_list *dir_aux, node_list *file_head, node_list *file_aux) {
-	
+void dir_search(node_list *dir_head, node_list *dir_aux, node_list *file_head, node_list *file_aux) {
+	DIR *dir=opendir(dir_head->name);
+	ec_null(dir,"MasterWorker, dir_search, s.c. in apertura");
+	struct dirent *file;	//struttura dati per file all'interno della directory che stiamo scorrendo
+	while((errno=0, file=readdir)!=NULL) {	
+		if(errno!=0) {	//controllo errore
+			fprintf(stderr,"%s\t",dir_head->name);
+			exit(EXIT_FAILURE);
+		}
+		if() {	//controlla se e' un file normale
+			
+		}
+		else if() {	//controlla se e' una directory diversa da "./"
+			
+		}
+		else if(file->d_type==DT_UNKNOWN) {
+			
+		}
+	}
+	if(errno!=0) {	//controllo errore
+		fprintf(stderr,"%s\t",dir_head->name);
+		exit(EXIT_FAILURE);
+	}
 }
 
 /*Mette in fondo alla coda un filename*/
@@ -74,7 +106,6 @@ void master_worker(int argc, char *argv[]) {
 	//scorre gli argomenti passati
 	while((opt=getopt(argc,argv,"n:q:t:d:"))!=-1) {
 		switch(opt) {	//guarda se l'argomento e' un'opzione, altrimenti verifica che sia un file
-		
 			case 'n':	//numero di worker
 				nlong=strtol(optarg,NULL,10);
 				if(nlong<1) {
@@ -109,7 +140,7 @@ void master_worker(int argc, char *argv[]) {
 				if(!S_ISDIR(dir_info.st_mode))
 					fprintf(stderr,"L'argomento deve essere una directory. Opzione scartata.\n");
 				else		//aggiunge la directory alla lista di directory da esplorare
-					l_add(&directories,optarg);	//passa lista e nome directory
+					l_add(&directories,optarg,0);	//passa lista e nome directory
 				break;
 				
 			default:
@@ -132,11 +163,16 @@ void master_worker(int argc, char *argv[]) {
 		ec_minusone(stat(argv[i],"Nella lista di file"));	//ottieni info sul file
 		if(!S_ISREG(file_info.st_mode))	//se l'argomento passato non e' un file si ignora
 			fprintf(stderr,"Passato file non adatto.\n");
-		else l_add(&files,argv[i]);	//altrimenti aggiungi il file alla lista di filename
+		else l_add(&files,argv[i],0);	//altrimenti aggiungi il file alla lista di filename
 	}
 	
 	//ricerca all'interno della lista di directory
-	dir_find_r(&directories,&dir_aux,&files,&file_aux);
+	while(directories!=NULL) {
+		dir_search(&directories,&dir_aux,&files,&file_aux);
+		*directories=directories->next;
+		free(dir_aux);
+		dir_aux=*directories;
+	}
 	
 	//ciclo di inserimento task nella coda	
 }
