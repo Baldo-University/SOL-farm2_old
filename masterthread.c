@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include "queue.h"
 
 /*
 MasterThread legge gli argomenti inviati da linea di comando.
@@ -46,7 +47,7 @@ int enqueue();
 void master_worker(int argc, char *argv[]) {
 	//settiamo i valori di default. Se necessario verranno sovrascritti in seguito dalle opzioni
 	long workers=WORKERS;
-	long queue_len=QUEUE_LENGTH;
+	size_t queue_len=QUEUE_LENGTH;
 	long delay=DELAY;
 	
 	int opt;	//integer per getopt
@@ -72,7 +73,10 @@ void master_worker(int argc, char *argv[]) {
 					perror("In getopt");
 					fprintf(stderr,"L'opzione '-%c' passata non e' valida e viene scartata. Passare un intero positivo.\n",opt);
 				}
-				else queue_len=nlong;
+				else {
+					if(nlong>SIZE_MAX) nlong=SIZE_MAX;
+					queue_len=(size_t)nlong;
+				}
 				break;
 				
 			case 't':	//ritardo di inserimento consecutivo nella coda
@@ -101,13 +105,8 @@ void master_worker(int argc, char *argv[]) {
 	}
 	
 	//creazione della coda di task, un array di stringhe usato come buffer a cerchio
-	char **queue;
-	ec_null(queue=malloc(queue_len*sizeof(char*)),"Masterworker, s.c. creazione coda");
-	int i;	//indice
-	for(i=0;i<queue_len;i++) {	//inizializzazione degli elementi della coda
-		ec_null(queue[i]=malloc((NAME_LENGTH)*sizeof(char)),"MasterWorker, s.c. creazione elemento di coda");
-	}
-	int front=-1, back=-1;	//indici, rispettivamente, di testa e fine di coda
+	char **queue=create_queue(queue_len,NAME_LENGTH);
+	
 	//creazione del threadpool
 	
 	//si salvano i filename su di una lista che sara' passata alla coda di produzione	
