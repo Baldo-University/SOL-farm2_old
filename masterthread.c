@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include "pool.h"
 #include "queue.h"
 
 /*
@@ -44,6 +45,9 @@ void l_add(node_list*,char*,int);
 void dir_search(node_list*,node_list*,node_list*,node_list*);
 int enqueue();
 
+//funzione principale del processo padre
+//legge gli argomenti, crea la lista di file da produrre, la coda di produzione e il threadpool
+//gestisce i segnali
 void master_worker(int argc, char *argv[]) {
 	//settiamo i valori di default. Se necessario verranno sovrascritti in seguito dalle opzioni
 	long workers=WORKERS;
@@ -182,10 +186,4 @@ void dir_search(node_list *dir_head, node_list *dir_aux, node_list *file_head, n
 		fprintf(stderr,"%s\t",dir_head->name);
 		exit(EXIT_FAILURE);
 	}
-}
-
-/*Mette in fondo alla coda un filename*/
-//TODO mettere in .h condiviso
-int enqueue() {
-	
 }

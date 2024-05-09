@@ -7,23 +7,24 @@
 	if((s)==NULL) {perror(m); exit(EXIT_FAILURE);}
 
 char **items;	//coda
-int front, rear;	//indici di inizio e fine 
-size_t size;	//dimensione della coda
+int front=-1, rear=-1;	//indici di inizio e fine 
+size_t dim;	//dimensione della coda
+static pthread_mutex_t mtx=PTHREAD_MUTEX_INITIALIZER;	//mutex di coda
 
 //crea la coda
 char **create_queue(size_t size) {
 	dim=size;
-	items=malloc()
-	ec_null(items=malloc(size*sizeof(char*)),"queue, s.c. creazione coda");
+	items=malloc(dim);
+	ec_null(items=malloc(dim*sizeof(char*)),"queue, s.c. creazione coda");
 	int i;
-	for(i=0;i<size;i++)	//inizializzazione degli elementi della coda
+	for(i=0;i<dim;i++)	//inizializzazione degli elementi della coda
 		ec_null(items[i]=malloc((NAME_LENGTH)*sizeof(char)),"queue, s.c. creazione elemento di coda");
 	return items;
 }
 
 //Controlla se la coda e' piena
 int isfull() {
-	if((front==rear+1) || (front==0 && rear==size-1)) return 1;	//coda piena
+	if((front==rear+1) || (front==0 && rear==dim-1)) return 1;	//coda piena
 	return 0;	//coda non piena
 }
 
@@ -40,7 +41,7 @@ int enqueue(const char *filename) {
 		return 1;	//restituisce un codice di errore
 	if(front==-1)	//controlla se la coda e' vuota
 		front=0;	//setta l'inizio della coda all'indice 0
-	rear=(++rear)%size;	//la coda si "allunga"
+	rear=(++rear)%dim;	//la coda si "allunga"
 	strncpy(items[rear],filename,NAME_LENGTH);
 	return 0;
 }
@@ -51,12 +52,12 @@ char *dequeue() {
 	if(isempty())
 		return NULL;
 	char filename[NAME_LENGTH];	//stringa temporanea
-	strncpy(temp,items[front],NAME_LENGTH);
+	strncpy(filename,items[front],NAME_LENGTH);
 	if(front==rear) {	//controlla se con questa chiamata la coda si svuota
 		front=-1;
 		rear=-1;
 	}
 	else	//L'inizio della coda scorre al prossimo indice di array
-		front=(++front)%size;
+		front=(++front)%dim;
 	return filename;
 }
