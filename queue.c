@@ -1,21 +1,26 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 
-#define NAME_LENGTH 256
+#ifndef NAME_LENGTH	
+	#define NAME_LENGTH 256	
+#endif
+
 #define ec_null(s,m) \
 	if((s)==NULL) {perror(m); exit(EXIT_FAILURE);}
 
 char **items;	//coda
 int front=-1, rear=-1;	//indici di inizio e fine 
 size_t dim;	//dimensione della coda
-static pthread_mutex_t mtx=PTHREAD_MUTEX_INITIALIZER;	//mutex di coda
+pthread_mutex_t lock;
 
 //crea la coda
 char **create_queue(size_t size) {
 	dim=size;
 	items=malloc(dim);
 	ec_null(items=malloc(dim*sizeof(char*)),"queue, s.c. creazione coda");
+	pthread_mutex_init(&lock,NULL);
 	int i;
 	for(i=0;i<dim;i++)	//inizializzazione degli elementi della coda
 		ec_null(items[i]=malloc((NAME_LENGTH)*sizeof(char)),"queue, s.c. creazione elemento di coda");
@@ -48,7 +53,7 @@ int enqueue(const char *filename) {
 
 //Rimozione di un elemento dalla cima della coda
 //Return value: char* (stringa) con filename se la funzione termina con successo, NULL se la coda e' vuota
-char *dequeue() {
+const char *dequeue() {
 	if(isempty())
 		return NULL;
 	char filename[NAME_LENGTH];	//stringa temporanea

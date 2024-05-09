@@ -2,8 +2,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include "masterthread.h"
 
-#define SOCKETNAME "farm2.sck"
+#ifndef SOCKETNAME
+	#define SOCKETNAME "farm2.sck"
+#endif
 
 /*
 Main del progetto farm2, a.a. 2023/24. Autore: Baldini Enrico

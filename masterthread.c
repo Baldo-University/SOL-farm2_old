@@ -43,7 +43,6 @@ typedef struct node* node_list;
 
 void l_add(node_list*,char*,int);
 void dir_search(node_list*,node_list*,node_list*,node_list*);
-int enqueue();
 
 //funzione principale del processo padre
 //legge gli argomenti, crea la lista di file da produrre, la coda di produzione e il threadpool
@@ -133,8 +132,12 @@ void master_worker(int argc, char *argv[]) {
 		free(dir_aux);	//libera la memoria
 		dir_aux=*directories;
 	}
-	
+	char filename[NAME_LENGTH];
 	//ciclo di inserimento task nella coda	
+	while(files!=NULL) {
+		strncpy(filename,files->name,NAME_LENGTH);
+		
+	}
 }
 
 /*aggiunta di un filename alla lista di filename (vale per file e per directory)*/
