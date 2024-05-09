@@ -1,10 +1,10 @@
+#include <pthread.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/un.h>
 #include <sys/select.h>
-#include <pthread.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/un.h>
 
 #define UNIX_MAX_PATH 108
 #define N 256	//lunghezza massima di un filepath +1
@@ -61,6 +61,10 @@ int main(int argc, char *argv[]) {
 	ec_minusone(listen(fd_skt,SOMAXCONN),"Collector, listen");	//segna socket in ascolto
 	FD_ZERO(&set);
 	FD_SET(fd_skt,&set);
+	
+	//crea il tthread che dorme per un secondo e stampa la lista
+	
+	//inizia l'ascolto di connessioni coi thread
 	while(running) {
 		rdset=set;
 		

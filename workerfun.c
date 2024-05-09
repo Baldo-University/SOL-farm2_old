@@ -21,6 +21,7 @@ Terminata l'operazione si rimette in attesa fino all'arrivo del prossimo task
 o della propria terminazione
 */
 
+/*Questa funzione effettua il calcolo di result*/
 long worker_sum(char *filename) {
 	//TODO fread invece di fgets
 	/*calcolo dati nei file*/
@@ -52,6 +53,7 @@ void worker_fun(char *socketname) {
 	/*Collegamento tramite socket al Collector*/
 	long sum;
 	char *filename;	//nome di file passato come task
+	
 	
 	/*Calcolo del risultato*/
 	sum=worker_sum(filename);
