@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
 			exit(EXIT_FAILURE);
 			break;
 		case 0:	//figlio. Nota: il nome del programma chiamato con exec e' collector
-			execl("./collector","collector",SOCKETNAME,(*char)NULL);
+			execl("./collector","collector",SOCKETNAME,(char*)NULL);
 			perror("Main, in exec");
 			exit(EXIT_FAILURE);
 		default:	//padre
