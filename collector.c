@@ -25,6 +25,7 @@ Main del collector
 struttura dati per mantenere tutti i dati ricevuti dai client
 select per capire quale thread scrittore e' pronto a fornire dati
 Il server e' single threaded per evitare l'overhead del multithread, gia' introdotto da MW
+Pertanto il server usa la SC select()
 */
 
 /*elementi di lista con risultato e filepath*/
@@ -55,7 +56,10 @@ int main(int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 	/*Setup socket*/
-	int fd_skt, fd_c;	//file descriptor di socket di ascolto passivo e di 
+	int fd_skt, fd_c;	//file descriptor di socket di ascolto passivo e di I/O con un client
+	int fd_num=0, fd;	//massimo fd attivo e indice per verificare i risultati di select
+	char *buf;	//questo buffer contiene il long col valore e il nome del filename
+	ec_null(malloc(sizeof(long)+NAME_LENGTH),"Collector, main, s.c. in chiamata");
 	fd_set set, rdset;	//insieme di fd attivi e ins. di fd attesi in lettura 
 	int nread;
 	struct sockaddr_un sa;
@@ -77,10 +81,33 @@ int main(int argc, char *argv[]) {
 	else {
 		
 	}
+	
 	//inizia l'ascolto di connessioni coi thread
+	//NB: slect in un loop deve essere reinizializzata
 	while(running) {
 		rdset=set;
-		
+		ec_minusone(select(fd_num+1,&rd_set,NULL,NULL,NULL),"Collector, main, s.c. listen");
+		for(fd=0;fd<fd_num;fd++) {	//scorre i socket
+			if(FD_ISSET(fd,&rdset)) {	//verifica che il socket faccia parte del read set
+				if(fd==fd_sk) {	//connessione socket pronta
+					fd_c=accept(fd_sk,NULL,0));
+					FD_SET(fd_c,&set);	//aggiorna il read set
+					if(fd_c>fd_num)
+						fd_num=fd_c;	//incrementa il contatore di connessioni
+				}
+				else {	//invio dati I/O tramite socket pronto
+					nread=read(fd,buf,N+sizeof(long));
+					if(nread==0) {	//controlla se ha ricevuto EOF
+						FD_CLR(fd,&set);
+						fd_num=aggiorna(&set);
+						close(fd);
+					}
+				}
+			}
+			else {	//nread !=0
+				/*Comportamento in chiusura*/
+			}
+		}
 	}
 }
 
