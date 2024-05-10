@@ -5,12 +5,17 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/un.h>
+#include <unistd.h>
 
 #define UNIX_MAX_PATH 108
 #define N 256	//lunghezza massima di un filepath +1
+#define PRINT_INTERVAL 1
 
-#define ec_null(s,m) if((s)==NULL) {perror(m); exit(EXIT_FAILURE);}
-#define ec_minusone(s,m) if((s)==-1) {perror(m); exit(EXIT_FAILURE);}
+#define ec_null(s,m) \
+	if((s)==NULL) {perror(m); exit(EXIT_FAILURE);}
+#define ec_minusone(s,m) \
+	if((s)==-1) {perror(m); exit(EXIT_FAILURE);}
+
 /*
 Il collector eviene eseguito tramite exec, quindi avere un main lo rende un secondo programma
 */
@@ -31,9 +36,13 @@ typedef struct node {
 typedef struct node* node_list;
 
 void l_ordered_add(node_list*,long,char*);	//Aggiunge un risultato alla lista in maniera ordinata
-void thread_print(void);	//funzione del thread che stampa i risultati ottenuti con intervallo indicativo di 1 secondo
+static void *thread_print(void);	//funzione del thread che stampa i risultati ottenuti con intervallo indicativo di 1 secondo
 void l_print(node_list*);	//Stampa la lista
 void l_clear(node_list*);	//Libera la memoria allocata alla lista
+
+static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;	//lock di mutua esclusione sulla lista da stampare
+static node_list results;	//lista di risultati
+static int running=1;	//int che fa da booleano per i while dei due thread
 
 /*
 Secondo processo del programma, riceve come argomento il nome della socket.
@@ -45,9 +54,7 @@ int main(int argc, char *argv[]) {
 		fprintf(stderr,"Errore fatale, argomenti mal posti in Collector.");
 		exit(EXIT_FAILURE);
 	}
-	node_list results=NULL;	//crea la lista di 
 	/*Setup socket*/
-	int running=1;	//int che fa da booleano per il while
 	int fd_skt, fd_c;	//file descriptor di socket di ascolto passivo e di 
 	fd_set set, rdset;	//insieme di fd attivi e ins. di fd attesi in lettura 
 	int nread;
@@ -63,7 +70,13 @@ int main(int argc, char *argv[]) {
 	FD_SET(fd_skt,&set);
 	
 	//crea il tthread che dorme per un secondo e stampa la lista
-	
+	pthread_t tid;
+	if(pthread_create(&tid,NULL,&thread_print,NULL)!=0) {	//creazione thread e controllo errore
+		
+	}
+	else {
+		
+	}
 	//inizia l'ascolto di connessioni coi thread
 	while(running) {
 		rdset=set;
@@ -94,6 +107,15 @@ void l_ordered_add(node_list *head, long res, char *name) {
 		}
 		//ha scorso la lista e non ha trovato elementi maggiori di quello da includere
 		aux->next=*new;
+	}
+}
+
+static void *thread_print() {
+	while(running) {
+		sleep(PRINT_INTERVAL);
+		Pthread_mutex_lock(&mutex);
+		l_print(results);
+		Pthread_mutex_unlokc(&mutex);
 	}
 }
 
