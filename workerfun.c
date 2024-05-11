@@ -1,6 +1,9 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <sys/socket.h>
 #include <unistd.h>
 
+#define NAME_LENGTH 256
 #define ec_null(s,m) \
 	if((s)==NULL) {perror(m); exit(EXIT_FAILURE);}
 
@@ -14,7 +17,7 @@ filename e' il nome del file contenente i valori da sommare
 socketname e' il nome del file socket a cui si collega il thread
 */
 
-/*da riscrivere?
+/*
 Inizia col collegamento della socket, si mette in attesa di task.
 Una volta ottenuto il task elabora li risultato e lo invia tramite socket.
 Terminata l'operazione si rimette in attesa fino all'arrivo del prossimo task
@@ -23,27 +26,28 @@ o della propria terminazione
 
 /*Questa funzione effettua il calcolo di result*/
 long worker_sum(char *filename) {
-	//TODO fread invece di fgets
-	/*calcolo dati nei file*/
-	long sum=0;	//somma totale
-	long i=0;	//contatore di riga per il calcolo
+	long sum=0, i=0, temp=0;	//somma totale, indice e valore ausiliario
+	size_t nread;	//numero di byte letti
 	FILE *file;	//file da leggere
-	ec_null(file=fopen(filename,"r"),"In apertura file");	//apertura file
-	char *numbuf;	//buffer che mette un long in store
-	//salva un long per riga piu' il newline
-	ec_null(numbuf=malloc(sizeof(long)+1),"In malloc di buffer");
-	//leggi i valori, un long per riga, e infine inviali tramite socket
-	errno=0;	//settato a 0 prima di ogni chiamata per evitare sovrascritture
-	while(errno=0, fgets(numbuf,sizeof(long),file)!=NULL) {
+	ec_null(file=fopen(filename,"r"),"worker_sum, s.c. apertura file");	//apertura file con controllo
+	char *numbuf;	//buffer che salva l'ultimo long letto
+	//allocazione memoria al buffer con controllo
+	ec_null(numbuf=malloc(sizeof(long),"worker_sum, s.c. allocazione memoria");	
+	while(errno=0, nread=fread(numbuf,sizeof(long),1,file)>0) {	//legge i byte un long alla volta
 		if(errno) {
-			perror("worker_sum - in lettura file");
-			exit(EXIT_FAILURE);
+			perror("worker_sum, s.c. lettura file")
+			fclose(file);
+			perror("worker_sum, s.c. chiusura file")
+			free(numbuf);
+			return -1;
 		}
-		sum+=(i++)*(strtol(numbuf,NULL,10));	//i*file[i] seguito da i+1
+		temp=strtol(numbuf,NULL,10);	//trasforma il valore da stringa a long
+		sum+=i*temp;	//i*file[i]
+		i++;
 	}
-	errno=0
+	errno=0;
 	fclose(file);
-	perror("worker_sum - in chiusura file");
+	perror("worker_sum, s.c. chiusura file");
 	free(numbuf);
 	return sum;
 }
@@ -53,15 +57,17 @@ void worker_fun(char *socketname) {
 	/*Collegamento tramite socket al Collector*/
 	long sum;
 	char *filename;	//nome di file passato come task
+	ec_null(filename=malloc(NAME_LENGTH*sizeof(char)),"worker, s.c. allocazione memoria");
 	
+	//inizio loop
+		/*Consumo di un filename dalla coda di produzione*/
 	
-	/*Calcolo del risultato*/
-	sum=worker_sum(filename);
+		/*Calcolo del risultato*/
+		sum=worker_sum(filename);
 	
-	/*Invio al socket*/
+		/*Invio dati tramite socket*/
+
+	//fine loop
 	
-	/*Attesa*/
-	
-	/*Terminazione*/
-	
+	/*Terminazione*/	
 }
