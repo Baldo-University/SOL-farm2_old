@@ -7,8 +7,13 @@ typedef struct threadpool threadpool;
 /*Creazione di un nuovo threadpool*/
 threadpool * create_pool(size_t);	
 
-/*termina il threadpool*/
-void closepool(threadpool*);
+/*Aggiunta di un nuovo thread*/
+int add_thread(threadpool*);
 
-int
+/*Rimozione di un thread*/
+void remove_thread(threadpool*);
+
+/*Terminazione del threadpool*/
+void close_pool(threadpool*);
+
 #endif
