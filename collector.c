@@ -29,6 +29,7 @@ Pertanto il server usa la SC select()
 */
 
 /*elementi di lista con risultato e filepath*/
+/*TODO metterla in .h condiviso fra thread e collector?*/
 typedef struct node {
 	long result;	
 	char name[N];
@@ -100,7 +101,7 @@ int main(int argc, char *argv[]) {
 					if(nread==0) {	//controlla se ha ricevuto EOF
 						FD_CLR(fd,&set);
 						fd_num=aggiorna(&set);
-						close(fd);
+						//close(fd);
 					}
 				}
 			}

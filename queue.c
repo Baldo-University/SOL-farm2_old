@@ -1,19 +1,18 @@
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
-
-#ifndef NAME_LENGTH	
-	#define NAME_LENGTH 256	
-#endif
+#include "queue.h"
 
 #define ec_null(s,m) \
 	if((s)==NULL) {perror(m); exit(EXIT_FAILURE);}
 
 char **items;	//coda
 int front=-1, rear=-1;	//indici di inizio e fine 
-size_t dim;	//dimensione della coda
-pthread_mutex_t lock;
+size_t dim=1;	//dimensione della coda
+pthread_mutex_t items_lock;	
+pthread_cond_t cond;
+extern int isgoing=0;	//variabile condivisa. Indica se MasterWorker continua ad inserire task in coda
 
 //crea la coda
 char **create_queue(size_t size) {
@@ -56,7 +55,8 @@ int enqueue(const char *filename) {
 const char *dequeue() {
 	if(isempty())
 		return NULL;
-	char filename[NAME_LENGTH];	//stringa temporanea
+	char *filename;	//stringa temporanea
+	ec_null(filename=malloc(NAME_LENGTH*sizeof(char)),"queue, dequeue, s.c. allocazione memoria");
 	strncpy(filename,items[front],NAME_LENGTH);
 	if(front==rear) {	//controlla se con questa chiamata la coda si svuota
 		front=-1;
@@ -65,4 +65,8 @@ const char *dequeue() {
 	else	//L'inizio della coda scorre al prossimo indice di array
 		front=(++front)%dim;
 	return filename;
+}
+
+void destroy_queue() {
+	
 }

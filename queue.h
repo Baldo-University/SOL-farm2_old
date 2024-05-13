@@ -4,6 +4,7 @@
 	char **create_queue(size_t);
 	int isfull();
 	int isempty();
-	int enqueue(const char* filename);
+	int enqueue(const char*);
 	const char *dequeue();
+	void destroy_queue();
 #endif
