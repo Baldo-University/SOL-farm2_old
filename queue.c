@@ -10,9 +10,10 @@
 char **items;	//coda
 int front=-1, rear=-1;	//indici di inizio e fine 
 size_t dim=1;	//dimensione della coda
+char *filename;		//buffer per contenere un filename temporaneo
 pthread_mutex_t items_lock;	
 pthread_cond_t cond;
-extern int isgoing=0;	//variabile condivisa. Indica se MasterWorker continua ad inserire task in coda
+extern int queue_running=0;	//variabile condivisa. Indica se MasterWorker continua ad inserire task in coda
 
 //crea la coda
 char **create_queue(size_t size) {
@@ -22,7 +23,9 @@ char **create_queue(size_t size) {
 	pthread_mutex_init(&lock,NULL);
 	int i;
 	for(i=0;i<dim;i++)	//inizializzazione degli elementi della coda
-		ec_null(items[i]=malloc((NAME_LENGTH)*sizeof(char)),"queue, s.c. creazione elemento di coda");
+		ec_null(items[i]=malloc(NAME_LENGTH*sizeof(char)),"queue, s.c. creazione elemento di coda");
+	ec_null(filename=malloc(NAME_LENGTH*sizeof(char)),"queue, s.c. creazione elemento temporaneo");
+	queue_running=1;
 	return items;
 }
 
@@ -40,9 +43,10 @@ int isempty() {
 //Aggiunta di un elemento in fondo alla coda
 //return value: 0 se la funzione termina con successo, 1 se la coda e' piena
 int enqueue(const char *filename) {
-	//controllo di coda piena
-	if(isfull()) 
+	if(isfull()) 	//controllo di coda piena
 		return 1;	//restituisce un codice di errore
+	if(!queue_running)	//controllo che la coda non sia stata bloccata
+		return 1;
 	if(front==-1)	//controlla se la coda e' vuota
 		front=0;	//setta l'inizio della coda all'indice 0
 	rear=(++rear)%dim;	//la coda si "allunga"
@@ -55,8 +59,6 @@ int enqueue(const char *filename) {
 const char *dequeue() {
 	if(isempty())
 		return NULL;
-	char *filename;	//stringa temporanea
-	ec_null(filename=malloc(NAME_LENGTH*sizeof(char)),"queue, dequeue, s.c. allocazione memoria");
 	strncpy(filename,items[front],NAME_LENGTH);
 	if(front==rear) {	//controlla se con questa chiamata la coda si svuota
 		front=-1;
@@ -67,6 +69,16 @@ const char *dequeue() {
 	return filename;
 }
 
+//Libera la memoria allocata per la coda e imposta le variabil per indicare che la coda e' chiusa
 void destroy_queue() {
-	
+	if(queue_running)
+		queue_running=0;
+	int i;
+	for(i=0;i<dim;i++)
+		free(items[i]);
+	free(items);
+	free(filename);
+	front=-1;
+	rear=-1;
+	dim=-1;
 }

@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include "masterthread.h"
 #include "pool.h"
 #include "queue.h"
 
@@ -52,6 +53,8 @@ void master_worker(int argc, char *argv[]) {
 	long workers=WORKERS;
 	size_t queue_len=QUEUE_LENGTH;
 	long delay=DELAY;
+	
+	extern int queue_running;	//variabile condivisa che indica se si stanno inserendo filename nella coda di produzione
 	
 	int opt;	//integer per getopt
 	long nlong;	//long per getopt
@@ -109,6 +112,7 @@ void master_worker(int argc, char *argv[]) {
 	
 	//creazione della coda di task, un array di stringhe usato come buffer a cerchio
 	char **queue=create_queue(queue_len,NAME_LENGTH);
+	queue_running=1;	//lancia la coda
 	
 	//creazione del threadpool
 	
