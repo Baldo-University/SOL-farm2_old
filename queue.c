@@ -7,26 +7,25 @@
 #define ec_null(s,m) \
 	if((s)==NULL) {perror(m); exit(EXIT_FAILURE);}
 
-char **items;	//coda
+char **queue;	//coda
 int front=-1, rear=-1;	//indici di inizio e fine 
 size_t dim=1;	//dimensione della coda
 char *filename;		//buffer per contenere un filename temporaneo
-pthread_mutex_t items_lock;	
-pthread_cond_t cond;
+extern pthread_mutex_t queue_lock;	//lock sulla coda
+pthread_cond_t cond;		//variabile di condizione sulla coda
 extern int queue_running=0;	//variabile condivisa. Indica se MasterWorker continua ad inserire task in coda
 
 //crea la coda
 char **create_queue(size_t size) {
 	dim=size;
-	items=malloc(dim);
-	ec_null(items=malloc(dim*sizeof(char*)),"queue, s.c. creazione coda");
+	ec_null(queue=malloc(dim*sizeof(char*)),"queue, s.c. creazione coda");
 	pthread_mutex_init(&lock,NULL);
 	int i;
 	for(i=0;i<dim;i++)	//inizializzazione degli elementi della coda
-		ec_null(items[i]=malloc(NAME_LENGTH*sizeof(char)),"queue, s.c. creazione elemento di coda");
+		ec_null(queue[i]=malloc(NAME_LENGTH*sizeof(char)),"queue, s.c. creazione elemento di coda");
 	ec_null(filename=malloc(NAME_LENGTH*sizeof(char)),"queue, s.c. creazione elemento temporaneo");
 	queue_running=1;
-	return items;
+	return queue;
 }
 
 //Controlla se la coda e' piena
@@ -50,7 +49,7 @@ int enqueue(const char *filename) {
 	if(front==-1)	//controlla se la coda e' vuota
 		front=0;	//setta l'inizio della coda all'indice 0
 	rear=(++rear)%dim;	//la coda si "allunga"
-	strncpy(items[rear],filename,NAME_LENGTH);
+	strncpy(queue[rear],filename,NAME_LENGTH);
 	return 0;
 }
 
@@ -59,7 +58,7 @@ int enqueue(const char *filename) {
 const char *dequeue() {
 	if(isempty())
 		return NULL;
-	strncpy(filename,items[front],NAME_LENGTH);
+	strncpy(filename,queue[front],NAME_LENGTH);
 	if(front==rear) {	//controlla se con questa chiamata la coda si svuota
 		front=-1;
 		rear=-1;
@@ -75,8 +74,8 @@ void destroy_queue() {
 		queue_running=0;
 	int i;
 	for(i=0;i<dim;i++)
-		free(items[i]);
-	free(items);
+		free(queue[i]);
+	free(queue);
 	free(filename);
 	front=-1;
 	rear=-1;

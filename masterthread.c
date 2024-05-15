@@ -36,14 +36,11 @@ Funzione atexit()
 	if((s)<0) {perror(m); exit(EXIT_FAILURE);}
 
 /*Elementi di una lista di filepath*/
-typedef struct {
+typedef struct node {
 	char name[NAME_LENGTH];
 	struct node* next;
 } node;
 typedef struct node* node_list;
-
-void l_add(node_list*,char*,int);
-void dir_search(node_list*,node_list*,node_list*,node_list*);
 
 //funzione principale del processo padre
 //legge gli argomenti, crea la lista di file da produrre, la coda di produzione e il threadpool
@@ -112,6 +109,7 @@ void master_worker(int argc, char *argv[]) {
 	
 	//creazione della coda di task, un array di stringhe usato come buffer a cerchio
 	char **queue=create_queue(queue_len,NAME_LENGTH);
+	extern pthread_mutex_t queue_lock;	//lock sulla coda
 	queue_running=1;	//lancia la coda
 	
 	//creazione del threadpool
@@ -136,18 +134,26 @@ void master_worker(int argc, char *argv[]) {
 		free(dir_aux);	//libera la memoria
 		dir_aux=*directories;
 	}
-	char filename[NAME_LENGTH];
+	char *filename;	//stringa temporanea
+	ec_null(filename=malloc(NAME_LENGTH*sizeof(char)),"MasterWorker, s.c. allocazione memoria");
 	//ciclo di inserimento task nella coda	
 	while(files!=NULL) {
 		strncpy(filename,files->name,NAME_LENGTH);
-		
+		//lock della coda e controllo errore
+		if(pthread_mutex_lock(&queue_lock)) {	//"on success, lock() returns zero"
+			/*gestione errore*/
+		}
+		if(!isfull()) {
+			enqueue(filename);
+			pthread_cond_signal(&cond);
+		}
 	}
 }
 
 /*aggiunta di un filename alla lista di filename (vale per file e per directory)*/
 void l_add(node_list *head, char *name, int mode) {	//mode indica se inserire in cima o in coda
 	node_list new;
-	ec_null((new=malloc(sizeof(node)))==NULL,"MasterWorker: in malloc di nodo da aggiungere a lista");
+	ec_null((new=malloc(sizeof(node)))==NULL,"MasterWorker, in malloc di nodo da aggiungere a lista");
 	strncpy(new->name,name,NAME_LENGTH+1);
 	switch(mode) {
 		case 0:	//aggiunta in testa

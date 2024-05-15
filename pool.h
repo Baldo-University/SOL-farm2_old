@@ -4,22 +4,27 @@
 
 typedef struct threadpool threadpool;
 typedef struct threadnode threadnode;
-typedef struct threadlist threadlist;
 
-/*Creazione di un nuovo threadpool*/
-//argomenti passati: numero iniziale di thread, coda di produzione
-//returns: threadpool
+/*Creazione di un nuovo threadpool
+argomenti passati: numero iniziale di thread, coda di produzione
+returns: threadpool
+*/
 threadpool * create_pool(size_t,char**);	
 
-/*Aggiunta di un nuovo thread*/
-//argomenti passati:
-//returns: 
+/*Aggiunta di un nuovo thread
+argomenti passati:
+returns:
+*/
 int add_thread(threadpool*);
 
-/*Rimozione di un thread*/
+/*Rimozione di un thread
+
+*/
 void remove_thread(threadpool*);
 
-/*Terminazione del threadpool*/
+/*Terminazione del threadpool
+
+*/
 void close_pool(threadpool*);
 
 #endif
