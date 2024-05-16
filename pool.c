@@ -19,17 +19,18 @@ typedef struct threadnode {
 typedef struct threadnode* threadlist;	//definizione aggiuntiva per rendere piu' chiaro il codice
 
 //Struct del threadpool
-typedef struct threadpool {
+typedef struct threadpool_t {
 	threadlist threads_head;	//puntatore alla testa di lista thread
 	threadlist threads_rear;	//puntatore alla coda di lista thread
 	size_t num_threads;		//numero di thread
-} threadpool;
+	pthread_mutex_t lock;	//mutex del threadpool
+	pthread_cond_t cond;	//condizionale per wait e signal
+	char **task_queue;		//coda di task
+	int running;		//booleano di pool attivo
+} threadpool_t;
 
-extern int threadpool_running=0;	//indica se il threadpool sia attivo o meno
-extern pthread_mutex_t poolmutex;	//mutex del threadpool
-extern pthread_mutex_t runningmutex;	//mutex di threadpool_running
 
-threadpool * create_pool(size_t size) {
+threadpool_t * create_pool(size_t size, char **queue) {
 	threadpool *pool;
 	ec_null(pool=(threadpool*)malloc(sizeof(threadpool)),"pool, s.c. allocazione memoria al threadpool");
 	pool->num_threads=size;
@@ -39,16 +40,16 @@ threadpool * create_pool(size_t size) {
 }
 
 /*Aggiunta di un nuovo thread*/
-int add_thread(threadpool*) {
+int add_thread(threadpool_t *pool) {
 
 }
 
 /*Rimozione di un thread*/
-void remove_thread(threadpool*) {
+void remove_thread(threadpool_t *pool) {
 
 }
 
 /*Terminazione del threadpool*/
-void close_pool(threadpool*) {
+void close_pool(threadpool_t *pool) {
 
 }

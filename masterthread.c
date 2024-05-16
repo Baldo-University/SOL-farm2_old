@@ -51,12 +51,10 @@ void master_worker(int argc, char *argv[]) {
 	size_t queue_len=QUEUE_LENGTH;
 	long delay=DELAY;
 	
-	extern int queue_running;	//variabile condivisa che indica se si stanno inserendo filename nella coda di produzione
-	
 	int opt;	//integer per getopt
 	long nlong;	//long per getopt
 	node_list directories=NULL;	//lista di directory passate con -d
-	Node_list dir_aux=directories;;	//puntatore ausiliario
+	node_list dir_aux=directories;	//puntatore ausiliario
 	struct stat dir_info;	//struct per info su filename passato (directory o file regular)
 	//scorre gli argomenti passati
 	while((opt=getopt(argc,argv,"n:q:t:d:"))!=-1) {
@@ -107,14 +105,17 @@ void master_worker(int argc, char *argv[]) {
 		}
 	}
 	
-	//creazione della coda di task, un array di stringhe usato come buffer a cerchio
+	/*creazione della coda di task, un array di stringhe usato come buffer a cerchio*/
 	char **queue=create_queue(queue_len,NAME_LENGTH);
 	extern pthread_mutex_t queue_lock;	//lock sulla coda
-	queue_running=1;	//lancia la coda
+	extern int queue_running=1;	//lancia la coda
 	
-	//creazione del threadpool
+	/*creazione del threadpool*/
+	threadpool *pool=create_pool(workers,*queue);
+	extern int threadpool_running=0;	//indica se il threadpool sia attivo o meno
+	extern pthread_mutex_t poolmutex;	//mutex del threadpool
 	
-	//si salvano i filename su di una lista che sara' passata alla coda di produzione	
+	/*si salvano i filename su di una lista che sara' passata alla coda di produzione*/
 	node_list files=NULL;	//lista di filename
 	node_list file_aux=files;		//puntatore ausiliario
 	struct stat file_info;	//info sul file considerato
@@ -127,7 +128,7 @@ void master_worker(int argc, char *argv[]) {
 		else l_add(&files,argv[i],0);	//altrimenti aggiungi il file alla lista di filename
 	}
 	
-	//ricerca all'interno della lista di directory
+	/*ricerca ricorsiva all'interno della lista di directory*/
 	while(directories!=NULL) {
 		dir_search(&directories,&dir_aux,&files,&file_aux);	//ricerca breadth-first
 		*directories=directories->next;	//scorre la lista
